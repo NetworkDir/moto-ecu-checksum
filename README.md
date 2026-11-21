@@ -1,10 +1,10 @@
 # moto-ecu-checksum
 
-Verify and repair the checksums in motorcycle ECU images (Bosch MSE6.0, MSE8.0, MG1, Yamaha, Honda Keihin, Dell'Orto and more) — no commercial tooling required.
+Verify and repair the checksums in motorcycle ECU images (Bosch MSE6.0, MSE8.0, MG1, Yamaha, Honda Keihin, Dell'Orto, Continental M3C and more) — no commercial tooling required.
 
 Edit a map in TunerPro/WinOLS, fix the checksum, flash. Zero dependencies: use the web page, or the single-file Python scripts (Python 3.7+) for the Bosch ECUs.
 
-**Web version: [networkdir.github.io/moto-ecu-checksum](https://networkdir.github.io/moto-ecu-checksum/)**: drop an image, download the fixed file. It runs entirely in your browser, so your file is never uploaded. It detects the algorithm automatically and supports Bosch MSE6.0, MSE8.0 (E186), MG1 (Bajaj / KTM / TVS), Yamaha MT, Honda X-ADV / ADV350 (Keihin), Dell'Orto ECM, QH250 and Italjet / Suzuki-type ECUs. See [Web version](#web-version) and [Other ECUs](#other-ecus-web-version).
+**Web version: [networkdir.github.io/moto-ecu-checksum](https://networkdir.github.io/moto-ecu-checksum/)**: drop an image, download the fixed file. It runs entirely in your browser, so your file is never uploaded. It detects the algorithm automatically and supports Bosch MSE6.0, MSE8.0 (E186), MG1 (Bajaj / KTM / TVS), Yamaha MT, Honda X-ADV / ADV350 (Keihin), Dell'Orto ECM, QH250, Italjet / Suzuki-type and Continental M3C (KTM / Husqvarna) ECUs. See [Web version](#web-version) and [Other ECUs](#other-ecus-web-version).
 
 ```
 $ python bosch_mse6_checksum.py tuned.bin -o tuned_fixed.bin
@@ -141,6 +141,7 @@ Every algorithm below reproduces a commercial flash tool's checksum correction b
 | Dell'Orto ECM | Bajaj RS200 2024 (`JL351458010651`, 3 calibrations) | One's complement of the byte sum of `0x80000`-`0x921FD`, big-endian 16-bit at `0x921FE`. |
 | QH250 | QH250 (`E2400-05`) | Big-endian 16-bit words of `0x0000`-`0x7FEF` sum to 0; checksum at `0x7FEE`. |
 | Italjet / Suzuki-type | Italjet Dragstar 200 2023 (`5710BL01` / `33950-03K00`) | Byte sum of `0x20000` to the end, little-endian 16-bit followed by its complement, right after the `AA55CC33` marker holding the part number. |
+| Continental M3C (MC9S12X) | Husqvarna TE300i 2020 (`KM557EU2025002`, 256 KB internal-flash read) | Segments start with `FF FF FF FF`, a big-endian CRC-16/MODBUS (poly `0x8005` reflected, init `0xFFFF`), a range count and `count` start/end pairs as banked addresses `00 PP AAAA` (end inclusive). The CRC covers the listed ranges in order. Page `PP` sits at file offset `(PP mod 16) * 0x4000`. Four descriptors per image; the calibration one is at `0x6804` (`E1:A950`-`E2:BBEF`). |
 
 Notes:
 
@@ -172,6 +173,7 @@ algorithms/honda-keihin.js Honda (Keihin): X-ADV 750, ADV350
 algorithms/dellorto-ecm.js Dell'Orto ECM
 algorithms/qh250.js        QH250
 algorithms/italjet-suzuki.js  Italjet / Suzuki-type ECU
+algorithms/continental-m3c.js Continental M3C (MC9S12X, KTM / Husqvarna)
 ```
 
 When a file is loaded, every registered algorithm is tried and the ones that recognise the image are offered. The fixed file is re-verified before it is downloaded; if the self-check fails, nothing is downloaded.
